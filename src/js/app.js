@@ -718,26 +718,23 @@ class TrainingScheduler {    constructor() {
                         // Get the first sheet
                         const firstSheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[firstSheetName];
-                        
-                        // Convert to JSON
+                          // Convert to JSON
                         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                         
                         if (jsonData.length < 2) {
                             throw new Error('The Excel file must contain at least a header row and one data row.');
                         }
                         
-                        // Check header row
-                        const headers = jsonData[0];
-                        if (!headers.includes('Date') || !headers.includes('Trainer')) {
-                            throw new Error('Invalid Excel header. Expected headers to include: Date, Day, Trainer, Hours, Participant, Level/Goal');
-                        }
-                        
-                        // Process the Excel data
+                        // Process the Excel data - let the function handle header detection
                         this.processExcelData(jsonData);
                         document.body.removeChild(fileInput);
-                        
-                    } catch (error) {
-                        alert('Error importing Excel file: ' + (error.message || 'Unknown error'));
+                          } catch (error) {
+                        const errorMessage = `Error importing Excel file: ${error.message || 'Unknown error'}\n\n` +
+                            'Tips:\n' +
+                            '1. Your Excel file should have columns for Date and Trainer (header names are flexible)\n' +
+                            '2. Date can be in any standard format\n' +
+                            '3. Make sure the first row contains headers\n';
+                        alert(errorMessage);
                         console.error('Excel import error:', error);
                         document.body.removeChild(fileInput);
                     }
@@ -757,9 +754,13 @@ class TrainingScheduler {    constructor() {
                         
                         this.processCSV(content);
                         document.body.removeChild(fileInput);
-                        
-                    } catch (error) {
-                        alert('Error importing CSV file: ' + (error.message || 'Unknown error'));
+                          } catch (error) {
+                        const errorMessage = `Error importing CSV file: ${error.message || 'Unknown error'}\n\n` +
+                            'Tips:\n' +
+                            '1. Your CSV file should have columns for Date and Trainer\n' +
+                            '2. Make sure the first row contains headers\n' +
+                            '3. Values should be separated by commas\n';
+                        alert(errorMessage);
                         console.error('CSV import error:', error);
                         document.body.removeChild(fileInput);
                     }
@@ -776,15 +777,14 @@ class TrainingScheduler {    constructor() {
         
         // Trigger file selection dialog
         fileInput.click();
-    }
-      processCSV(csvContent) {
+    }    processCSV(csvContent) {
         // Parse CSV content
         const lines = csvContent.split('\n');
         
-        // Check if the CSV has a header row and it matches our expected format
-        const header = lines[0].trim();
-        if (!header.includes('Date') || !header.includes('Trainer') || !header.includes('Hours')) {
-            throw new Error('Invalid CSV header. Expected: Date,Day,Trainer,Hours,Participant,Level/Goal');
+        // More flexible header check
+        const header = lines[0].trim().toLowerCase();
+        if (!header.includes('date') && !header.includes('trainer')) {
+            throw new Error('Invalid CSV header. Expected to find at least Date and Trainer columns.');
         }
         
         // Clear current schedule data
@@ -857,20 +857,35 @@ class TrainingScheduler {    constructor() {
             alert('Schedule imported successfully!');
         }
     }
-    
-    processExcelData(jsonData) {
+      processExcelData(jsonData) {
         // Check if the user wants to clear the current schedule
         if (confirm('Do you want to clear the current schedule and replace it with the imported data?')) {
             this.days = [];
             
-            // Get header row and find column indices
-            const headers = jsonData[0];
-            const dateIndex = headers.indexOf('Date');
-            const dayIndex = headers.indexOf('Day');
-            const trainerIndex = headers.indexOf('Trainer');
-            const hoursIndex = headers.indexOf('Hours');
-            const participantIndex = headers.indexOf('Participant');
-            const levelIndex = headers.indexOf('Level/Goal');
+            // Get header row
+            const headers = jsonData[0].map(header => String(header || '').trim().toLowerCase());
+            
+            // Find column indices with flexible matching
+            const findColumnIndex = (possibleNames) => {
+                for (const name of possibleNames) {
+                    const index = headers.findIndex(h => h.toLowerCase().includes(name.toLowerCase()));
+                    if (index !== -1) return index;
+                }
+                return -1;
+            };
+            
+            const dateIndex = findColumnIndex(['date']);
+            const dayIndex = findColumnIndex(['day', 'weekday']);
+            const trainerIndex = findColumnIndex(['trainer', 'instructor', 'teacher']);
+            const hoursIndex = findColumnIndex(['hours', 'time', 'schedule']);
+            const participantIndex = findColumnIndex(['participant', 'student', 'trainee']);
+            const levelIndex = findColumnIndex(['level', 'goal', 'objective', 'notes']);
+            
+            // If we can't find required columns, show an error
+            if (dateIndex === -1 || trainerIndex === -1) {
+                throw new Error('Could not find required columns. Your Excel file must have columns for Date and Trainer. ' +
+                               'Current headers found: ' + jsonData[0].join(', '));
+            }
             
             // Create a map to track unique dates
             const dateMap = new Map();
@@ -890,44 +905,53 @@ class TrainingScheduler {    constructor() {
                 
                 // Skip rows without date or trainer
                 if (!dateStr || !trainer) continue;
-                
-                // Format date if it's a date object from Excel
+                  // Format date if it's a date object from Excel - handle all possible formats
                 let formattedDateStr;
-                if (typeof dateStr === 'string') {
-                    formattedDateStr = dateStr;
-                } else if (dateStr instanceof Date) {
-                    formattedDateStr = `${dateStr.getMonth() + 1}/${dateStr.getDate()}/${dateStr.getFullYear()}`;
-                } else {
-                    // Handle Excel date (stored as number)
-                    const excelDate = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
-                    formattedDateStr = `${excelDate.getMonth() + 1}/${excelDate.getDate()}/${excelDate.getFullYear()}`;
-                }
+                let date;
                 
-                // Create or get day entry
-                let dayObj;
-                if (dateMap.has(formattedDateStr)) {
-                    dayObj = this.days[dateMap.get(formattedDateStr)];
-                } else {
-                    // Parse date
-                    let date;
-                    if (typeof dateStr === 'string') {
-                        // Parse from string if it's a string
+                if (typeof dateStr === 'string') {
+                    // Try to parse the string date
+                    if (dateStr.includes('/')) {
+                        // MM/DD/YYYY format
+                        formattedDateStr = dateStr;
                         const dateParts = dateStr.split('/');
                         if (dateParts.length === 3) {
-                            const month = parseInt(dateParts[0]) - 1; // 0-based month
+                            const month = parseInt(dateParts[0]) - 1;
                             const day = parseInt(dateParts[1]);
                             const year = parseInt(dateParts[2]);
                             date = new Date(year, month, day);
                         } else {
-                            // Try to parse as date string
                             date = new Date(dateStr);
                         }
-                    } else if (dateStr instanceof Date) {
-                        date = dateStr;
                     } else {
-                        // Handle Excel date
-                        date = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
+                        // Try to parse as any date string
+                        date = new Date(dateStr);
+                        formattedDateStr = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
                     }
+                } else if (dateStr instanceof Date) {
+                    date = dateStr;
+                    formattedDateStr = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+                } else if (typeof dateStr === 'number') {
+                    // Handle Excel date (stored as number)
+                    date = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
+                    formattedDateStr = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+                } else {
+                    // Skip this row if the date is invalid
+                    console.error('Invalid date format:', dateStr);
+                    continue;
+                }
+                
+                // Validate the date
+                if (isNaN(date.getTime())) {
+                    console.error('Invalid date value:', dateStr);
+                    continue;
+                }
+                  // Create or get day entry
+                let dayObj;
+                if (dateMap.has(formattedDateStr)) {
+                    dayObj = this.days[dateMap.get(formattedDateStr)];
+                } else {
+                    // We already have the date object from the earlier processing
                     
                     dayObj = {
                         date: date,
