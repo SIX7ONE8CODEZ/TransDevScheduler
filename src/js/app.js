@@ -219,9 +219,7 @@ class TrainingScheduler {    constructor() {
         // Load button
         document.getElementById('loadBtn').addEventListener('click', () => this.loadSchedule());
           // Delete button
-        document.getElementById('deleteBtn').addEventListener('click', () => this.deleteSelectedSessions());
-        
-        // Export button
+        document.getElementById('deleteBtn').addEventListener('click', () => this.deleteSelectedSessions());        // Export button
         document.getElementById('exportBtn').addEventListener('click', () => this.exportToExcel());
         
         // Import button
@@ -682,13 +680,11 @@ class TrainingScheduler {    constructor() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    }
-    
-    importFromExcel() {
+    }    importFromExcel() {
         // Create a temporary file input element
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
-        fileInput.accept = '.csv';
+        fileInput.accept = '.xlsx, .xls, .csv';
         fileInput.style.display = 'none';
         document.body.appendChild(fileInput);
         
@@ -700,26 +696,88 @@ class TrainingScheduler {    constructor() {
                 return;
             }
             
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    this.processCSV(event.target.result);
-                    document.body.removeChild(fileInput);
-                } catch (error) {
-                    alert('Error importing CSV file. Please check the file format.');
-                    console.error('CSV import error:', error);
-                    document.body.removeChild(fileInput);
-                }
-            };
+            const fileName = file.name.toLowerCase();
+            const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+            const isCsv = fileName.endsWith('.csv');
             
-            reader.readAsText(file);
+            if (!isExcel && !isCsv) {
+                alert('Please upload an Excel file (.xlsx, .xls) or CSV file (.csv).');
+                document.body.removeChild(fileInput);
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            if (isExcel) {
+                // For Excel files
+                reader.onload = (event) => {
+                    try {
+                        const data = new Uint8Array(event.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        // Get the first sheet
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // Convert to JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        if (jsonData.length < 2) {
+                            throw new Error('The Excel file must contain at least a header row and one data row.');
+                        }
+                        
+                        // Check header row
+                        const headers = jsonData[0];
+                        if (!headers.includes('Date') || !headers.includes('Trainer')) {
+                            throw new Error('Invalid Excel header. Expected headers to include: Date, Day, Trainer, Hours, Participant, Level/Goal');
+                        }
+                        
+                        // Process the Excel data
+                        this.processExcelData(jsonData);
+                        document.body.removeChild(fileInput);
+                        
+                    } catch (error) {
+                        alert('Error importing Excel file: ' + (error.message || 'Unknown error'));
+                        console.error('Excel import error:', error);
+                        document.body.removeChild(fileInput);
+                    }
+                };
+                
+                reader.readAsArrayBuffer(file);
+                
+            } else {
+                // For CSV files
+                reader.onload = (event) => {
+                    try {
+                        const content = event.target.result;
+                        
+                        if (!content || content.trim() === '') {
+                            throw new Error('The CSV file appears to be empty.');
+                        }
+                        
+                        this.processCSV(content);
+                        document.body.removeChild(fileInput);
+                        
+                    } catch (error) {
+                        alert('Error importing CSV file: ' + (error.message || 'Unknown error'));
+                        console.error('CSV import error:', error);
+                        document.body.removeChild(fileInput);
+                    }
+                };
+                
+                reader.readAsText(file);
+            }
+            
+            reader.onerror = () => {
+                alert('Error reading the file. The file may be corrupted or too large.');
+                document.body.removeChild(fileInput);
+            };
         });
         
         // Trigger file selection dialog
         fileInput.click();
     }
-    
-    processCSV(csvContent) {
+      processCSV(csvContent) {
         // Parse CSV content
         const lines = csvContent.split('\n');
         
@@ -787,7 +845,113 @@ class TrainingScheduler {    constructor() {
                     });
                 }
             }
-              // Sort days by date
+            
+            // Sort days by date
+            this.days.sort((a, b) => a.date - b.date);
+            
+            // Update trainer filter
+            this.populateTrainerFilter();
+            
+            // Render the schedule
+            this.renderSchedule();
+            alert('Schedule imported successfully!');
+        }
+    }
+    
+    processExcelData(jsonData) {
+        // Check if the user wants to clear the current schedule
+        if (confirm('Do you want to clear the current schedule and replace it with the imported data?')) {
+            this.days = [];
+            
+            // Get header row and find column indices
+            const headers = jsonData[0];
+            const dateIndex = headers.indexOf('Date');
+            const dayIndex = headers.indexOf('Day');
+            const trainerIndex = headers.indexOf('Trainer');
+            const hoursIndex = headers.indexOf('Hours');
+            const participantIndex = headers.indexOf('Participant');
+            const levelIndex = headers.indexOf('Level/Goal');
+            
+            // Create a map to track unique dates
+            const dateMap = new Map();
+            
+            // Process data rows (skip header)
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length === 0) continue;
+                
+                // Get values from appropriate columns
+                const dateStr = row[dateIndex];
+                const dayName = dayIndex >= 0 ? row[dayIndex] : null;
+                const trainer = row[trainerIndex];
+                const hours = hoursIndex >= 0 ? row[hoursIndex] : '';
+                const participant = participantIndex >= 0 ? row[participantIndex] : '';
+                const level = levelIndex >= 0 ? row[levelIndex] : '';
+                
+                // Skip rows without date or trainer
+                if (!dateStr || !trainer) continue;
+                
+                // Format date if it's a date object from Excel
+                let formattedDateStr;
+                if (typeof dateStr === 'string') {
+                    formattedDateStr = dateStr;
+                } else if (dateStr instanceof Date) {
+                    formattedDateStr = `${dateStr.getMonth() + 1}/${dateStr.getDate()}/${dateStr.getFullYear()}`;
+                } else {
+                    // Handle Excel date (stored as number)
+                    const excelDate = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
+                    formattedDateStr = `${excelDate.getMonth() + 1}/${excelDate.getDate()}/${excelDate.getFullYear()}`;
+                }
+                
+                // Create or get day entry
+                let dayObj;
+                if (dateMap.has(formattedDateStr)) {
+                    dayObj = this.days[dateMap.get(formattedDateStr)];
+                } else {
+                    // Parse date
+                    let date;
+                    if (typeof dateStr === 'string') {
+                        // Parse from string if it's a string
+                        const dateParts = dateStr.split('/');
+                        if (dateParts.length === 3) {
+                            const month = parseInt(dateParts[0]) - 1; // 0-based month
+                            const day = parseInt(dateParts[1]);
+                            const year = parseInt(dateParts[2]);
+                            date = new Date(year, month, day);
+                        } else {
+                            // Try to parse as date string
+                            date = new Date(dateStr);
+                        }
+                    } else if (dateStr instanceof Date) {
+                        date = dateStr;
+                    } else {
+                        // Handle Excel date
+                        date = new Date(Math.round((dateStr - 25569) * 86400 * 1000));
+                    }
+                    
+                    dayObj = {
+                        date: date,
+                        dateFormatted: formattedDateStr,
+                        dayName: dayName || date.toLocaleDateString('en-US', { weekday: 'long' }),
+                        sessions: []
+                    };
+                    
+                    this.days.push(dayObj);
+                    dateMap.set(formattedDateStr, this.days.length - 1);
+                }
+                
+                // Add session for this day
+                if (trainer) {
+                    dayObj.sessions.push({
+                        trainer,
+                        hours: hours || '',
+                        participant: participant || '',
+                        level: level || ''
+                    });
+                }
+            }
+            
+            // Sort days by date
             this.days.sort((a, b) => a.date - b.date);
             
             // Update trainer filter
