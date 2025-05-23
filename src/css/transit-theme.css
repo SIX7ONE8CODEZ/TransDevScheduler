@@ -1,0 +1,142 @@
+/* Additional transit theme enhancements */
+
+/* Transit Banner styling */
+.transit-banner {
+    background: linear-gradient(to right, rgba(0, 80, 160, 0.05), rgba(0, 80, 160, 0.1), rgba(0, 80, 160, 0.05));
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05) inset;
+}
+
+.transit-banner::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color));
+}
+
+.route-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.banner-stops {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+}
+
+/* Login page enhancements */
+.login-container {
+    position: relative;
+    z-index: 10;
+}
+
+.login-container .route-pattern {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+/* Enhanced modal styles for add/edit schedule items */
+#eventModal .modal-content {
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)),
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect x="20" y="30" width="60" height="40" rx="5" fill="%230050a0" opacity="0.1"/><circle cx="30" cy="75" r="5" fill="%23333" opacity="0.1"/><circle cx="70" cy="75" r="5" fill="%23333" opacity="0.1"/></svg>');
+    background-size: cover, 100px 100px;
+    background-position: center, bottom right;
+    background-repeat: no-repeat;
+}
+
+/* Enhanced user info display */
+#user-info {
+    position: relative;
+    overflow: hidden;
+}
+
+#user-info::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background-image: 
+        radial-gradient(circle at bottom right, 
+            rgba(255, 255, 255, 0.2) 0%, 
+            rgba(255, 255, 255, 0.2) 30%, 
+            transparent 30.1%);
+}
+
+/* Special styling for the Trainer names */
+.trainer-cell {
+    position: relative;
+}
+
+.trainer-cell::before {
+    content: '👤';
+    margin-right: 5px;
+    opacity: 0.7;
+}
+
+/* Button group styles for better layout */
+.admin-only {
+    position: relative;
+}
+
+.admin-only::after {
+    content: '⚙️';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 10px;
+    background-color: var(--accent-color);
+    color: white;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Make participant names stand out more */
+.participant-cell {
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+/* Add some life to the hours display */
+.hours-cell {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+
+/* Footer enhancements */
+.footer-logo {
+    position: relative;
+    padding-left: 35px;
+}
+
+/* The footer-logo::before content is now removed as we're using SVG */
+.footer-logo::before {
+    content: '';
+    display: none;
+}
+
+/* Gradient borders for the schedule table */
+.schedule-table {
+    border: 1px solid transparent;
+    border-image: linear-gradient(to right, var(--primary-color), var(--accent-color));
+    border-image-slice: 1;
+}

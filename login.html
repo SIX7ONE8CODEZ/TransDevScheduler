@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransDev Commerce City Training Schedule - Login</title>    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/transit-effects.css">
+    <link rel="stylesheet" href="src/css/transit-theme.css">
+    <link rel="stylesheet" href="src/css/city-bus.css">
+    <link rel="icon" href="src/images/favicon.svg" type="image/svg+xml"><style>
+        body {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1569867097817-5d4563a1b934?q=80&w=1920');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 35px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #0050a0, #ff6900);
+        }
+          .login-container h1 {
+            color: #0050a0;
+            margin-bottom: 25px;
+            font-size: 26px;
+            text-align: center;
+            position: relative;
+            padding-left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container h1::before {
+            content: '';
+            display: none;
+        }
+        
+        .login-container h1 .city-bus-icon {
+            margin-right: 10px;
+            width: 28px;
+            height: 28px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #0050a0;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .form-group input:focus {
+            border-color: #0050a0;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 80, 160, 0.15);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #0050a0;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .login-btn:hover {
+            background-color: #003b75;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .error-message {
+            color: #f44336;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+            padding: 10px;
+            background-color: rgba(244, 67, 54, 0.1);
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .additional-options {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 15px;
+        }
+        
+        .guest-btn, .register-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.3s;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .guest-btn {
+            background-color: #3f7cc7;
+            color: white;
+        }
+        
+        .register-btn {
+            background-color: #ff6900;
+            color: white;
+        }
+        
+        .guest-btn:hover {
+            background-color: #0050a0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .register-btn:hover {
+            background-color: #d35600;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+          /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 450px;
+            max-width: 90%;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #0050a0, #ff6900);
+        }
+        
+        .modal-content h2 {
+            color: #0050a0;
+            margin-bottom: 20px;
+            font-size: 22px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #f44336;
+        }
+        
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .success-message {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        
+        .error-message {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+          .footer {
+            background-color: #0050a0;
+            color: white;
+            text-align: center;
+            padding: 25px 0;
+            margin-top: 40px;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6900, #3f7cc7);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .footer p {
+            margin: 8px 0;
+            font-size: 14px;
+            letter-spacing: 0.2px;
+        }
+
+        .footer a {
+            color: #ff8b3d;
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            color: #ff6900;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>      <div class="login-container">        <div class="route-pattern"></div>
+        <h1><span class="city-bus-icon"></span>TransDev Commerce City Training Schedule</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" required>
+            </div>            <button type="submit" class="login-btn">Login</button>
+            <div class="additional-options">
+                <button type="button" id="guestLoginBtn" class="guest-btn">Participant Login</button>
+                <button type="button" id="registerBtn" class="register-btn">Register New Trainer</button>
+            </div>
+            <div id="error-message" class="error-message">
+                Invalid username or password. Please try again.
+            </div>
+        </form>    </div>
+    
+    <!-- Participant Login Modal -->
+    <div id="participantModal" class="modal">
+        <div class="modal-content">
+            <span class="close participant-close">&times;</span>
+            <h2>Participant Login</h2>
+            <form id="participantForm">
+                <div class="form-group">
+                    <label for="participantName">Your Name:</label>
+                    <input type="text" id="participantName" required>
+                </div>
+                <div class="form-group">
+                    <label for="participantEmail">Email (optional):</label>
+                    <input type="email" id="participantEmail">
+                </div>
+                <button type="submit" class="login-btn">View Schedule</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Trainer Registration Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close register-close">&times;</span>
+            <h2>Register New Trainer</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="newUsername">Username:</label>
+                    <input type="text" id="newUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Password:</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password:</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <div class="form-group">
+                    <label for="trainerEmail">Email:</label>
+                    <input type="email" id="trainerEmail" required>
+                </div>
+                <button type="submit" class="login-btn">Register</button>
+                <div id="register-message" class="message"></div>
+            </form>
+        </div>
+    </div>    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo"><span class="city-bus-icon"></span> The Destination Is Greatness</div>
+            <p>&copy; 2025 SIX7ONE8 CODEZ. All rights reserved.</p>
+            <p>Contact: <a href="mailto:SIX7ONE8@ICLOUD.COM">SIX7ONE8@ICLOUD.COM</a> | Cell: <a href="tel:3039959851">303-995-9851</a></p>
+        </div>
+    </footer>
+    
+    <script src="src/js/transit-loader.js"></script>    <script>
+        // Get modal elements
+        const participantModal = document.getElementById('participantModal');
+        const registerModal = document.getElementById('registerModal');
+        
+        // Show loading animation on page load
+        if (typeof showTransitLoader === 'function') {
+            showTransitLoader('Welcome to Transit Training System');
+            setTimeout(() => hideTransitLoader(), 1500);
+        }
+        
+        // Get button elements
+        const guestLoginBtn = document.getElementById('guestLoginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        
+        // Get close buttons
+        const participantClose = document.querySelector('.participant-close');
+        const registerClose = document.querySelector('.register-close');
+        
+        // Open participant login modal
+        guestLoginBtn.addEventListener('click', function() {
+            participantModal.style.display = 'block';
+        });
+        
+        // Open registration modal
+        registerBtn.addEventListener('click', function() {
+            registerModal.style.display = 'block';
+        });
+        
+        // Close participant modal
+        participantClose.addEventListener('click', function() {
+            participantModal.style.display = 'none';
+        });
+        
+        // Close registration modal
+        registerClose.addEventListener('click', function() {
+            registerModal.style.display = 'none';
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === participantModal) {
+                participantModal.style.display = 'none';
+            }
+            if (event.target === registerModal) {
+                registerModal.style.display = 'none';
+            }
+        });
+        
+        // Handle participant login form submission
+        document.getElementById('participantForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const participantName = document.getElementById('participantName').value;
+            
+            // Store participant info in session storage
+            sessionStorage.setItem('userRole', 'participant');
+            sessionStorage.setItem('username', participantName);
+            
+            // Redirect to schedule page
+            window.location.href = 'index.html';
+        });
+        
+        // Handle trainer registration form submission
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newUsername = document.getElementById('newUsername').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const trainerEmail = document.getElementById('trainerEmail').value;
+            
+            // Check if passwords match
+            if (newPassword !== confirmPassword) {
+                document.getElementById('register-message').textContent = 'Passwords do not match!';
+                document.getElementById('register-message').className = 'message error-message';
+                return;
+            }
+            
+            // In a real application, you would send this data to a server
+            // For now, we'll simulate registration by showing a success message
+            
+            document.getElementById('register-message').textContent = 'Registration successful! Your account has been sent for approval.';
+            document.getElementById('register-message').className = 'message success-message';
+            
+            // Reset form
+            document.getElementById('registerForm').reset();
+            
+            // Close modal after 3 seconds
+            setTimeout(function() {
+                registerModal.style.display = 'none';
+            }, 3000);
+        });
+        
+        // Simple user authentication
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+              // Admin users (you can modify these with your actual admin usernames/passwords)
+            const admins = [
+                { username: 'admin1', password: 'admin123' },
+                { username: 'admin2', password: 'admin123' }
+            ];
+            
+            // Trainers (view-only users)
+            const trainers = [
+                {"username": "Terry", "password": "Welcome1"},
+                {"username": "Veronica", "password": "Welcome2"},
+                {"username": "Sisay", "password": "Welcome3"},
+                {"username": "Patsy", "password": "Welcome4"},
+                {"username": "Donald", "password": "Welcome5"},
+                {"username": "Demo", "password": "Welcome6"},
+                {"username": "Geary", "password": "Welcome7"},
+                {"username": "Galen", "password": "Welcome8"},
+                {"username": "Norman", "password": "Welcome9"}
+            ];
+            
+            // Check if user is an admin
+            const adminUser = admins.find(admin => admin.username === username && admin.password === password);
+            if (adminUser) {
+                // Store admin role in session storage
+                sessionStorage.setItem('userRole', 'admin');
+                sessionStorage.setItem('username', username);
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Check if user is a trainer
+            const trainerUser = trainers.find(trainer => trainer.username === username && trainer.password === password);
+            if (trainerUser) {
+                // Store trainer role in session storage
+                sessionStorage.setItem('userRole', 'trainer');
+                sessionStorage.setItem('username', username);
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // If not a valid user, show error
+            document.getElementById('error-message').style.display = 'block';
+        });    </script>
+      <div class="bus-animation-container">
+        <div class="bus-icon"></div>
+    </div>
+    
+    <style>
+        .bus-animation-container {
+            position: fixed;
+            bottom: 100px;
+            left: 0;
+            width: 100%;
+            height: 30px;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .bus-icon {
+            position: absolute;
+            animation: busDriving 15s linear infinite;
+            width: 40px;
+            height: 40px;
+            background-image: url('src/images/city-bus.svg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    </style>
+</body>
+</html>

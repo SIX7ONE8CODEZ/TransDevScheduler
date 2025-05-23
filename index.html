@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransDev Commerce City Training Schedule</title>    <link rel="stylesheet" href="src/css/styles.css">
+    <link rel="stylesheet" href="src/css/transit-effects.css">
+    <link rel="stylesheet" href="src/css/transit-theme.css">
+    <link rel="stylesheet" href="src/css/city-bus.css">
+    <link rel="icon" href="src/images/favicon.svg" type="image/svg+xml">
+</head>
+<body>    <div class="app-container">
+        <div class="route-pattern"></div>        <header>            <div class="header-top">                <h1><span class="city-bus-icon"></span>TransDev Commerce City Training Schedule</h1>
+                <div id="user-info">
+                    <span id="username-display"></span>
+                    <span id="role-display"></span>
+                    <button id="logoutBtn">Logout</button>
+                </div>
+            </div>            <div class="controls" id="controls">
+                <!-- Filter controls -->
+                <div class="filter-section">
+                    <label for="trainerFilter">Filter by Trainer:</label>
+                    <select id="trainerFilter">
+                        <option value="all">All Trainers</option>
+                    </select>
+                    
+                    <label for="dayFilter">Filter by Day:</label>
+                    <select id="dayFilter">
+                        <option value="all">All Days</option>
+                        <option value="Sunday">Sunday</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                    </select>
+                    
+                    <button id="applyFiltersBtn">Apply Filters</button>
+                    <button id="clearFiltersBtn">Clear Filters</button>
+                </div>
+                
+                <button id="saveBtn" class="admin-only">Save Schedule</button>
+                <button id="loadBtn" class="admin-only">Load Schedule</button>
+                <button id="deleteBtn" class="admin-only">Delete Schedule</button>
+                <button id="exportBtn">Export to Excel</button>
+                <button id="importBtn" class="admin-only">Import from Excel</button>
+                <button id="addDayBtn" class="admin-only">Add Day</button>
+                <button id="addSessionBtn" class="admin-only">Add Session</button>
+            </div>        </header>
+        
+        <div class="schedule-container">
+            <table id="scheduleTable" class="schedule-table">
+                <thead>
+                    <tr id="date-row">
+                        <!-- Date headers will be added dynamically -->
+                    </tr>
+                    <tr id="day-row">
+                        <!-- Day headers will be added dynamically -->
+                    </tr>
+                </thead>
+                <tbody id="scheduleBody">
+                    <!-- Schedule data will be added dynamically -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Modal for adding events -->
+        <div id="eventModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add/Edit Schedule Item</h2>
+                <form id="eventForm">
+                    <div class="form-group">
+                        <label for="eventTitle">Title:</label>
+                        <input type="text" id="eventTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventLocation">Location:</label>
+                        <input type="text" id="eventLocation">
+                    </div>
+                    <div class="form-group">
+                        <label for="eventNotes">Notes:</label>
+                        <textarea id="eventNotes"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventColor">Color:</label>
+                        <input type="color" id="eventColor" value="#4CAF50">
+                    </div>
+                    <button type="submit" id="saveEventBtn">Save</button>
+                </form>
+            </div>        </div>    </div>    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo"><span class="city-bus-icon"></span> The Destination Is Greatness</div>
+            <p>&copy; 2025 SIX7ONE8 CODEZ. All rights reserved.</p>
+            <p>Contact: <a href="mailto:SIX7ONE8@ICLOUD.COM">SIX7ONE8@ICLOUD.COM</a> | Cell: <a href="tel:3039959851">303-995-9851</a></p>
+        </div>
+    </footer>
+    
+    <script src="src/js/transit-loader.js"></script>
+    <script src="src/js/app.js"></script>
+</body>
+</html>
