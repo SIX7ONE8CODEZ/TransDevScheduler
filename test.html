@@ -1,10 +1,382 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Page</title>
+    <title>TransDev Import Testing</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        .test-section {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .log {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+    </style>
 </head>
 <body>
-    <h1>Test Page Works!</h1>
-    <p>If you're seeing this, your browser can open local HTML files correctly.</p>
+    <h1>TransDev Import Testing Page</h1>
+    <p>This page helps test the Excel/CSV import functionality for the TransDev Training Scheduler.</p>
+    
+    <div class="test-section">
+        <h2>Test Website Format Import</h2>
+        <p>Test importing Excel files with dates as columns (website format):</p>
+        <button id="testWebsiteFormat">Test Website Format Import</button>
+        <button id="testNumbersFormat">Test Apple Numbers Format</button>
+        <div id="importLog" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Manual File Import</h2>
+        <p>Select a file to test importing:</p>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+        <button id="processFile">Process File</button>
+        <div id="fileLog" class="log"></div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="src/js/csv-utils.js"></script>
+    <script>
+        // Logger function
+        function log(message, type = 'info', logElement = document.getElementById('importLog')) {
+            const entry = document.createElement('div');
+            entry.textContent = message;
+            if (type === 'error') entry.className = 'error';
+            if (type === 'success') entry.className = 'success';
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        // Test website format import
+        document.getElementById('testWebsiteFormat').addEventListener('click', () => {
+            log('Testing website format import...');
+            
+            // Simulated website format data
+            const websiteData = [
+                ['', '5/25/2025', '5/26/2025', '5/27/2025', '5/28/2025', '5/29/2025'],
+                ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+                ['Trainer', 'Hours', 'Participant', 'Level/Goal'],
+                ['Terry', '11:00 am to 7:30 pm', 'Teklu', 'RTW class (5)/ BTW (19)'],
+                ['Veronica', '5:00 am to 1:00 pm', 'Joshua', 'BTW-7 hr Basic-1 hr prep'],
+                ['Galen', '5:00 am to 1:00 pm', 'Annette', 'BTW- 8hr Advanced']
+            ];
+            
+            // Convert to CSV
+            const csvLines = websiteData.map(row => 
+                row.map(cell => {
+                    if (cell === null || cell === undefined) return '';
+                    const str = String(cell);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                }).join(',')
+            );
+            
+            // Test parsing
+            try {
+                log('Checking if first row contains dates...');
+                
+                const firstRow = csvLines[0];
+                const firstValues = parseCSVLine(firstRow);
+                
+                // Check for date patterns
+                const datePattern = /\d{1,2}\/\d{1,2}\/\d{2,4}|\d{1,2}\.\d{1,2}\.\d{2,4}|\d{4}-\d{1,2}-\d{1,2}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{2,4}/i;
+                const dateColumns = [];
+                
+                for (let i = 0; i < firstValues.length; i++) {
+                    const value = firstValues[i];
+                    if (value && datePattern.test(String(value).trim())) {
+                        dateColumns.push(i);
+                        log(`Found date at column ${i}: ${value}`, 'success');
+                    }
+                }
+                
+                if (dateColumns.length > 0) {
+                    log(`Detected ${dateColumns.length} date columns - Website format detected`, 'success');
+                } else {
+                    log('No date columns found in the first row', 'error');
+                }
+                
+                // Check for day names in second row
+                log('Checking for day names in second row...');
+                const secondRow = csvLines[1];
+                const secondValues = parseCSVLine(secondRow);
+                
+                const dayPatterns = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                const dayColumns = [];
+                
+                for (let i = 0; i < secondValues.length; i++) {
+                    const value = secondValues[i];
+                    if (!value) continue;
+                    
+                    const lowerValue = String(value).toLowerCase();
+                    for (const day of dayPatterns) {
+                        if (lowerValue.includes(day)) {
+                            dayColumns.push(i);
+                            log(`Found day name at column ${i}: ${value}`, 'success');
+                            break;
+                        }
+                    }
+                }
+                
+                if (dayColumns.length > 0) {
+                    log(`Detected ${dayColumns.length} day columns - Website format confirmed`, 'success');
+                } else {
+                    log('No day names found in the second row', 'error');
+                }
+                
+                // Check for trainer row
+                log('Checking for trainer row...');
+                let trainerRowIndex = -1;
+                
+                for (let i = 0; i < csvLines.length; i++) {
+                    const lineValues = parseCSVLine(csvLines[i]);
+                    const lineHasTrainer = lineValues.some(cell => 
+                        cell && String(cell).toLowerCase().includes('trainer')
+                    );
+                    
+                    if (lineHasTrainer) {
+                        trainerRowIndex = i;
+                        log(`Found trainer row at index ${i}`, 'success');
+                        break;
+                    }
+                }
+                
+                if (trainerRowIndex !== -1) {
+                    log('Website format detection complete - all checks passed', 'success');
+                } else {
+                    log('Could not find trainer row', 'error');
+                }
+                
+            } catch (error) {
+                log(`Error during import test: ${error.message}`, 'error');
+            }
+        });
+        
+        // Test Numbers format import
+        document.getElementById('testNumbersFormat').addEventListener('click', () => {
+            log('Testing Apple Numbers format import...');
+            
+            // Simulated Numbers format data (period-delimited dates)
+            const numbersData = [
+                ['', '5.25.2025', '5.26.2025', '5.27.2025', '5.28.2025', '5.29.2025'],
+                ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+                ['Trainer', 'Hours', 'Participant', 'Level/Goal'],
+                ['Terry', '11:00 am to 7:30 pm', 'Teklu', 'RTW class (5)/ BTW (19)'],
+                ['Veronica', '5:00 am to 1:00 pm', 'Joshua', 'BTW-7 hr Basic-1 hr prep']
+            ];
+            
+            // Convert to CSV
+            const csvLines = numbersData.map(row => 
+                row.map(cell => {
+                    if (cell === null || cell === undefined) return '';
+                    const str = String(cell);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                }).join(',')
+            );
+            
+            // Test parsing
+            try {
+                log('Checking if first row contains dates (period-delimited format)...');
+                
+                const firstRow = csvLines[0];
+                const firstValues = parseCSVLine(firstRow);
+                
+                // Check for Numbers-style date patterns
+                const datePattern = /\d{1,2}\.\d{1,2}\.\d{2,4}/i;
+                const dateColumns = [];
+                
+                for (let i = 0; i < firstValues.length; i++) {
+                    const value = firstValues[i];
+                    if (value && datePattern.test(String(value).trim())) {
+                        dateColumns.push(i);
+                        log(`Found period-delimited date at column ${i}: ${value}`, 'success');
+                    }
+                }
+                
+                if (dateColumns.length > 0) {
+                    log(`Detected ${dateColumns.length} date columns - Website format with Numbers style dates detected`, 'success');
+                } else {
+                    log('No period-delimited dates found in the first row', 'error');
+                }
+                
+                // Continue with other checks...
+                log('Website format with Numbers style dates detection complete', 'success');
+                
+            } catch (error) {
+                log(`Error during import test: ${error.message}`, 'error');
+            }
+        });
+        
+        // Process user-selected file
+        document.getElementById('processFile').addEventListener('click', () => {
+            const fileInput = document.getElementById('fileInput');
+            const fileLog = document.getElementById('fileLog');
+            fileLog.innerHTML = '';
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                log('Please select a file first', 'error', fileLog);
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            log(`Processing file: ${file.name}`, 'info', fileLog);
+            
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    log('File loaded successfully', 'success', fileLog);
+                    
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {
+                        type: 'array',
+                        cellDates: true,
+                        dateNF: 'mm/dd/yyyy',
+                        cellText: false,
+                        cellNF: true,
+                        WTF: true
+                    });
+                    
+                    log(`Workbook loaded with ${workbook.SheetNames.length} sheets`, 'success', fileLog);
+                    log(`Sheets: ${workbook.SheetNames.join(', ')}`, 'info', fileLog);
+                    
+                    // Process each sheet
+                    for (const sheetName of workbook.SheetNames) {
+                        log(`\nAnalyzing sheet: ${sheetName}`, 'info', fileLog);
+                        
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                            header: 1,
+                            raw: false,
+                            defval: '',
+                            blankrows: false
+                        });
+                        
+                        log(`Sheet has ${jsonData.length} rows`, 'info', fileLog);
+                        
+                        if (jsonData.length > 0) {
+                            // Check for website format
+                            log('Checking for website format (dates as columns)...', 'info', fileLog);
+                            
+                            // Check first row for dates
+                            const firstRow = jsonData[0];
+                            let dateCount = 0;
+                            
+                            const datePattern = /\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+\d{1,2},?\s+\d{2,4}/i;
+                            
+                            for (let i = 0; i < firstRow.length; i++) {
+                                const cell = firstRow[i];
+                                if (!cell) continue;
+                                
+                                if (datePattern.test(String(cell).trim())) {
+                                    dateCount++;
+                                    log(`Found date at column ${i}: ${cell}`, 'success', fileLog);
+                                }
+                            }
+                            
+                            if (dateCount >= 2) {
+                                log(`Detected website format with ${dateCount} dates in first row`, 'success', fileLog);
+                            } else {
+                                log('First row date check: Not website format', 'info', fileLog);
+                                
+                                // Check for days in second row
+                                if (jsonData.length > 1) {
+                                    const secondRow = jsonData[1];
+                                    let dayCount = 0;
+                                    
+                                    const dayPatterns = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                                    
+                                    for (let i = 0; i < secondRow.length; i++) {
+                                        const cell = secondRow[i];
+                                        if (!cell) continue;
+                                        
+                                        const cellStr = String(cell).toLowerCase();
+                                        if (dayPatterns.some(day => cellStr.includes(day))) {
+                                            dayCount++;
+                                            log(`Found day name at column ${i}: ${cell}`, 'success', fileLog);
+                                        }
+                                    }
+                                    
+                                    if (dayCount >= 2) {
+                                        log(`Detected website format with ${dayCount} day names in second row`, 'success', fileLog);
+                                    } else {
+                                        log('Second row day check: Not website format', 'info', fileLog);
+                                    }
+                                }
+                            }
+                            
+                            // Look for trainer row
+                            for (let i = 0; i < Math.min(5, jsonData.length); i++) {
+                                const row = jsonData[i];
+                                const hasTrainer = row.some(cell => 
+                                    cell && String(cell).toLowerCase().includes('train')
+                                );
+                                
+                                if (hasTrainer) {
+                                    log(`Found trainer row at index ${i}`, 'success', fileLog);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                } catch (error) {
+                    log(`Error processing file: ${error.message}`, 'error', fileLog);
+                }
+            };
+            
+            reader.onerror = () => {
+                log('Error reading the file', 'error', fileLog);
+            };
+            
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
 </body>
 </html>
